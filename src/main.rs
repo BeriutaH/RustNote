@@ -7,6 +7,8 @@
 
 // use std::fmt::Display;
 
+use std::{cell::RefCell, rc::Rc};
+
 
 
 
@@ -1191,10 +1193,117 @@ fn main() {
                     // - Drop trait 的目的就是进行自动的释放处理逻辑
                     // . Rust 不允许手动调用 Drop trait 的 drop 方法
                     // ．但可以调用标准库的 std :: mem :: drop 函数，来提前 drop 值
+            // Rc<T> 
+                // Rc<T> 是一个引用计数智能指针，允许多个 ownership,一个值会有多个所有者，也就是说，会有多个要素指向它
+                // 为了支持多重所有权，Rc<T> reference counting（引用计数），会追踪所有到值的引用，当0个引用时就代表该值可以被清理掉
+                // 使用场景
+                    // 需要在heap上分配数据，这些数据被程序的多个部分读取（只读），但在编译时无法确定哪个部分最后使用完这些数据
+                    // RC<T> 只能用于单线程场景
+                    // Rc<T> 不在预导入模块中，所以需要手动导入
+                    // Rc::clone(&a)函数：增加引用计数
+                    // Rc::strong_count(&a)函数：获取引用计数
+                    // Rc::weak_count(&a)函数：获取弱引用计数
+                        // let aaa = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+                        // println!("aaa 强引用个数 = {}", Rc::strong_count(&aaa));
+                        // let _bbb = Cons(3, Rc::clone(&aaa));
+                        // println!("aaa 强引用个数 = {}", Rc::strong_count(&aaa));
+                        // {
+                        //     let _ccc = Cons(4, Rc::clone(&aaa));
+                        //     println!("aaa 强引用个数 = {}", Rc::strong_count(&aaa));
+                        // }
+                        // println!("aaa 在离开作用域之后的强引用个数 = {}", Rc::strong_count(&aaa))
+                    // Rc::clone(&a) 和 类型的clone()方法
+                            // Rc::clone不会执行数据的深度拷贝操作，只会增加引用的计数
+                            // 类型的clone()方法很多会执行数据的深度拷贝操作
+                        // let aa = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+                        // aa.clone();  // 会增加引用计数 和 Rc::clone区别在，Rc::clone不会执行数据的深度拷贝操作，只会增加引用的计数
+                        // let bb = Cons(3, Rc::clone(&aa));
+                        // let cc = Cons(4, Rc::clone(&aa));
+                    // Rc<T>通过不可变引用，是你可以在程序不同部分之间共享只读数据
+            // RefCell<T> 和内部可变性
+                // 内部可变性是Rust的设计模式之一
+                // 它允许你在只持有不可变引用的前提下对数据进行修改，数据结构中使用了unsafe代码来绕过Rust正常的可变性和借用规则
+                // 只能用于单线程的场景
+                // Box<T> 和 RefCell<T> 的区别
+                    // Box<T>：编译阶段强制代码遵守借用规则，否则就出现错误
+                    // RefCell<T>：只会在运行时检查借用规则，否则触发panic
+                // RefCell<T>的两个方法（安全接口）
+                    // borrow() 和 borrow_mut() 都是返回一个Rc<T>的智能指针，但borrow()返回的是一个不可变的引用，borrow_mut()返回的是一个可变的引用
+                    //  RefCell<T>会记录当前存在多少个活跃的Ref<T>和 RefMut<T>智能指针
+                        // 每次调用borrow：不可变借用计数+1
+                        // 任何一个Ref<T>的值离开作用域被释放时：不可变借用计数-1
+                        // 每次调用borrow_mut：可变借用计数+1
+                        // 任何一个RefMut<T>的值离开作用域被释放时：可变借用计数-1
+                            // let value = Rc::new(RefCell::new(5));
+                            // let aaaa = Rc::new(Cons(Rc::clone(&value), Rc::new(Nil)));
+                            // let bbbb = Cons(Rc::new(RefCell::new(6)), Rc::clone(&aaaa));
+                            // let cccc = Cons(Rc::new(RefCell::new(10)), Rc::clone(&aaaa));
+                            // *value.borrow_mut() += 10;
+                            // println!("aaaa after = {:?}", aaaa);
+                            // println!("bbb after = {:?}", bbbb);
+                            // println!("cccc after = {:?}", cccc); 
+                    // 其他方法
+                        // Cell<T>：通过复制来访问数据
+                        // Mutex<T>：用于实现跨线程情况下的内部可变性模式
+                // Rust循环引用可能会发生内存泄漏
+                    // Rust的内存安全机制可以保证很难发生内存泄漏，但不是不可能
+                    // 例如使用Rc<T>和RefCell<T>就可能创造出循环引用，从而发生内存泄漏，因为每个项的引用数量都不会变成0，值也就不会被处理
+                        // let aa = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
+                        // println!("aa的强引用个数 = {}", Rc::strong_count(&aa));  // 1
+                        // println!("aa的下一个item = {:?}", aa.tail());  // Some(RefCell { value: Nil })
+                        // let bb = Rc::new(Cons(10, RefCell::new(Rc::clone(&aa))));
+                        // println!("aa的强引用个数 = {}", Rc::strong_count(&aa));  // 2
+                        // println!("bb的强引用个数 = {}", Rc::strong_count(&bb));  // 1
+                        // println!("bb的下一个item = {:?}", bb.tail());  // Some(RefCell { value: Cons(5, RefCell { value: Nil }) })
+
+                        // if let Some(link) =  aa.tail(){
+                        //     // 把aa的第二个元素next指向bb
+                        //     *link.borrow_mut() = Rc::clone(&bb);
+                        // }
+                        // println!("aa的强引用个数 = {}", Rc::strong_count(&aa)); // 2
+                        // println!("bb的强引用个数 = {}", Rc::strong_count(&bb));  // 2
 
 
 
+
+                
 }
+
+
+// use Li23::{Cons, Nil};
+// #[derive(Debug)]
+// enum Li23 {
+//     Cons(i32, RefCell<Rc<Li23>>),
+//     Nil,
+// }
+
+// impl Li23 {
+//     fn tail(&self) -> Option<&RefCell<Rc<Li23>>> {
+//         match self {
+//             Cons(_, item) => Some(item),
+//             Nil => None,
+//         }
+//     }
+// }
+
+// #[derive(Debug)]
+// enum LiTwo {
+//     Cons(Rc<RefCell<i32>>, Rc<LiTwo>),
+//     Nil,
+// }
+// use LiTwo::{Cons, Nil};
+
+// use Lii::{Cons, Nil};
+// use std::rc::Rc;
+// enum Lii {
+//     Cons(i32, Rc<Lii>),
+//     Nil,
+// }
+
+// enum Lii {
+//     Cons(i32, Box<Lii>),
+//     Nil,
+// }
 
 // struct CustomStruct {
 //     data: String,
