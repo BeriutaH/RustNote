@@ -7,7 +7,9 @@
 
 // use std::fmt::Display;
 
-use std::{cell::RefCell, rc::Rc};
+
+// use std::{cell::RefCell, os::unix::thread, rc::{Rc, Weak}};
+use std::{thread, time::Duration};
 // #[tokio::main]
 // async fn main() {
 fn main() {
@@ -1252,13 +1254,215 @@ fn main() {
                         // }
                         // println!("aa的强引用个数 = {}", Rc::strong_count(&aa)); // 2
                         // println!("bb的强引用个数 = {}", Rc::strong_count(&bb));  // 2
+                // 防止循环引用，把Rc<T>替换为Weak<T>
+                    // Rc::clone()为Rc<T>实例的strong_count+1，增加引用计数，Rc<T>实例只有在strong_count为0时候才会被清理
+                    // Rc<T>实例通过调用Rc::downgrade()方法，可以创建一个Weak<T>实例(弱引用)，Weak<T>实例不会增加引用计数，返回的类型是Weak<T>(智能指针)
+                    // 调用Rc::downgrade 会为 weak_count +1
+                    // Rc<T>使用weak_coumt来追踪存在多少Weak<T>实例
+                    // weak_count 不为0并不影响Rc<T>实例的清理
+                // Strong vs Weak 
+                    // Strong Reference （强引用）是关于如何分享 Rc < T ＞实例的所有权. Weak Reference （弱引用）并不表达上述意思
+                // 使用 Weak Reference 并不会创建循环引用：
+                    // 当 Strong Reference 数量为0的时候， Weak Reference 会自动断开.在使用 Weak < T ＞前，需保证它指向的值仍然存在：
+                    // 在 Weak < T ＞实例上调用 upgrade 方法，返回 Option < Rc < T >>
+                            // let leaf = Rc::new(Node{
+                            //     value: 5,
+                            //     parent: RefCell::new(Weak::new()),
+                            //     children: RefCell::new(vec![])
+                            // });
+                            // let branch = Rc::new(Node{
+                            //     value: 10,
+                            //     parent: RefCell::new(Weak::new()),
+                            //     children: RefCell::new(vec![Rc::clone(&leaf)])
+                            // });
+                            // // borrow() 获得不可变引用，upgrade() 获得可变引用-->把Weak<T>转换成Rc<T>
+                            // println!("keaf parent = {:?}", leaf.parent.borrow().upgrade());
+                            // //  把leaf的父节点指向branch，通过downgrade方法，把branch的Rc<Node>转换成Weak<Node>
+                            // *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+                            // println!("keaf parent 现在 = {:?}", leaf.parent.borrow().upgrade());
+                            // println!("{:?}", branch)
+                    // 当强引用被丢弃时，弱引用即便有引用，也会被丢弃
+                        // let leaf = Rc::new(Node{
+                        //     value: 5,
+                        //     parent: RefCell::new(Weak::new()),
+                        //     children: RefCell::new(vec![])
+                        // });
+                        // println!("keaf strong = {}, weak = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+                        // {
+                        //     let branch = Rc::new(Node{
+                        //         value: 10,
+                        //         parent: RefCell::new(Weak::new()),
+                        //         children: RefCell::new(vec![Rc::clone(&leaf)])
+                        //     });
+                           
+                        //     //  把leaf的父节点指向branch，通过downgrade方法，把branch的Rc<Node>转换成Weak<Node>
+                        //     *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+                        //     println!("branch strong = {}, weak = {}", Rc::strong_count(&branch), Rc::weak_count(&branch));
+                        //     println!("keaf strong = {}, weak = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+                        // }
+                        // println!("keaf parent = {:?}", leaf.parent.borrow().upgrade());
+                        // println!("keaf strong = {}, weak = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+        /* 并发 */
+            // councurrent: 程序的不同部分之间独立执行，互不干扰
+            // parallel: 程序的不同部分同时执行
+            // Rust中，并发编程通过线程来实现，线程是Rust中并发编程的基本单元
+            // 注意，本文中的”并发“泛指 concurrent 和 parallel
 
+            // 使用线程同时运行代码
+                // 进程跟线程
+                    // 大部分OS里，代码运行在进程(process)中，OS同时管理多个进程，在程序里，各独立部分可以同时运行，运行这些独立部分的就是线程（thresd）
+                    // 多线程运行，提升性能，但是会增加复杂性，因为无法保障各线程的执行顺序
+                // 多线程可导致的问题
+                    // 竞争状态：现成以不一致的顺序访问数据或资源
+                    // 死锁：两个现成彼此等待对方使用完所持有的资源，线程无法继续
+                    // 只有在某些情况下发生的Bug，很难可靠的复现和修复
+                // 实现线程的方式
+                    // 通过调用OS的API来创建线程： 1:1模型--->需要较小的运行时
+                    // 语言自己实现的现成（绿色线程）： M:N 模型--->需要较大的运行时
+                    // Rust标准库仅提供1:1模型的线程
+                    // Rust中，线程通过std::thread::spawn()函数创建，参数是一个闭包（在新线程里运行的代码）
+                        // thread::spawn(|| {
+                        //     for i in 1..10 {
+                        //         println!("hi number {} from the spawned thread!", i);
+                        //         // 暂停一毫秒
+                        //         thread::sleep(Duration::from_millis(1));
+                        //     }
+                        // });
 
+                        // for i in 1..5 {
+                        //     println!("number {} from the main thread!", i);
+                        //     thread::sleep(Duration::from_millis(1));
+                        // }
+                    // 通过join Handle，等待线程结束
+                        // thread::spawn 函数的返回值类型是JoinHandle
+                        // JoinHandle持有值的所有权，调用其Join方法，可以等待对应的其他线程的完成
+                        // join方法：调用Handle的join方法会阻止当前运行线程的执行，直到对应的线程结束
+                            // let t = thread::spawn(|| {
+                            //     for i in 1..10 {
+                            //         println!("hi number {} from the spawned thread!", i);
+                            //         // 暂停一毫秒
+                            //         thread::sleep(Duration::from_millis(1));
+                            //     }
+                            // });
 
+                            // for i in 1..5 {
+                            //     println!("number {} from the main thread!", i);
+                            //     thread::sleep(Duration::from_millis(1));
+                            // }
+                            // // 等待子线程的结束，因为join会返回一个Result<T, E>，所以使用unwrap
+                            // t.join().unwrap()
+                    // 使用move闭包
+                        // move闭包通常和thread::spawn一起使用，因为闭包会捕获变量的引用，而spawn需要闭包获取变量的所有权
+                        // move闭包会强制闭包获取变量的所有权，而不是引用
+                        // 创建线程时，会把值的所有权从一个线程转移到另一个线程
+                            // let v = vec![1, 2, 3];
+                            // let handle = thread::spawn(move || {
+                            //     println!("Here's a vector: {:?}", v);
+                            // });
+                            // // 这里如果没有等待，那会出现上面的线程闭包函数还没来得及执行，v就失效了
+                            // handle.join().unwrap();
+            // 使用消息传递来跨线程传递数据
+                // 一种很流行且能保证安全并发的计数就是：消息传递
+                // 线程（或Actor）通过彼此发送消息（数据）来进行通信
+                // Go语言的名言：不要用共享内存来通信，要用通信来共享内存
+                // Rust：Channel（标准库提供）
+                // Channel
+                    // 包含发送端，接收端
+                    // 调用发送端的方法，发送数据
+                    // 接收端会检查和接收到达的数据
+                    // 如果发送端、接收端中任意一段被丢弃了，那么Channel就”关闭“了
+                    // 创建Channel
+                        // 使用mpsc::channel()创建一个通道，返回一个元组，包含发送端和接收端
+                        // mpsc:表示 multi-producer，single-consumer(多个生产者，一个消费者)，多个发送端，只有一个接收端
+                            // let (tx, rx) = mpsc::channel();
+                            // thread::spawn(move || {
+                            //     let val = String::from("hi");
+                            //     tx.send(val).unwrap();
+                            // });
+                            // // recv()一直阻塞直到接收到数据
+                            // let received = rx.recv().unwrap();
+                            // println!("Got: {}", received);
+                        // 发送端send方法
+                            // 参数：想要发送的数据
+                            // 返回值：Result<T, E>：如果有问题（接收端已经被丢弃），就返回一个错误
+                        // 接收端的方法：
+                            // recv方法：
+                                // 阻塞当前线程，知道Channel中有值被送来
+                                // 一旦有值收到，就返回Result<T, E>
+                                // 当发送端关闭，就会收到一个错误
+                            // try_recv方法：
+                                // 不会阻塞当前线程，立即返回Result<T, E>
+                                // 如果Channel中没有值，就返回一个错误
+                                // 如果有值，就返回一个Result<T, E>
+                                // 通常会使用循环用来检查try_recv的结果
+                    // Channel所有权转移
+                        // 所有权在消息传递中非常重要，能帮你编写安全并发的代码
+                            // let (tx, rx) = mpsc::channel();
+                            // thread::spawn(move || {
+                            //     let val = String::from("hi");
+                            //     tx.send(val).unwrap();
+                            //     println!("val sent {}", val);  // 这里报错，value borrowed here after move，表示val已经转移了所有权
+                            // });
+                            // // recv()一直阻塞直到接收到数据
+                            // let received = rx.recv().unwrap();
+                            // println!("Got: {}", received);
+                    // 发送多个值，接受者等待
+                        // let (tx, rx) = mpsc::channel();
+                        // thread::spawn(move || {
+                        //     let vals = vec![
+                        //         String::from("hi"),
+                        //         String::from("from"),
+                        //         String::from("the"),
+                        //     ];
+                        //     for i in vals {
+                        //         tx.send(i).unwrap();
+                        //         thread::sleep(Duration::from_secs(2));
+                        //     }
+                        // });
+                        // for received in rx {
+                        //     println!("Got: {}", received);
+                        // }
+                    // 克隆多个发送者
+                        let (tx, rx) = mpsc::channel();
+                        let tx1 = mpsc::Sender::clone(&tx);  // xxx.clone()会增加counter+1，所以当tx counter==0,rx就知道已经结束了
+                        thread::spawn(move || {
+                            let vals = vec![
+                                String::from("1: hi"),
+                                String::from("1: from"),
+                                String::from("1: the"),
+                                String::from("1: thread"),
+                            ];
 
+                            for i in vals {
+                                tx.send(i).unwrap();
+                                thread::sleep(Duration::from_secs(1));
+                            }
+                        });
+                        thread::spawn(move || {
+                            let vals = vec![
+                                String::from("2: hi"),
+                                String::from("2: from"),
+                                String::from("2: the"),
+                                String::from("2: thread"),
+                            ];
+
+                            for i in vals {
+                                tx1.send(i).unwrap();
+                                thread::sleep(Duration::from_secs(1));
+                            }
+                        });
+                        for received in rx {
+                            println!("Got: {}", received);
+                        }
                 
 }
-
+use std::sync::mpsc;
+// #[derive(Debug)]
+// struct Node {
+//     value: i32,
+//     parent: RefCell<Weak<Node>>,
+//     children: RefCell<Vec<Rc<Node>>>,
+// }
 
 // use Li23::{Cons, Nil};
 // #[derive(Debug)]
