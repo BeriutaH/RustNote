@@ -2,6 +2,166 @@
 // use std::cmp::PartialOrd;
 // use std::fmt::Display;
 
+pub struct Post {
+    content: String,
+}
+
+impl Post {
+    pub fn new() -> DraftPost {
+        DraftPost {
+            content: String::new(),
+        }
+    }
+
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+}
+
+pub struct DraftPost {
+    content: String,
+}
+
+impl DraftPost {
+    pub fn add_text(&mut self, text: &str) {
+        self.content.push_str(text);
+    }
+    pub fn request_review(self) -> PendingReview {
+        PendingReview {
+            content: self.content,
+        }
+    }
+}
+
+pub struct PendingReview {
+    content: String,
+}
+
+impl PendingReview {
+    pub fn approve(self) -> Post {
+        Post {
+            content: self.content,
+        }
+    }
+} 
+
+// trait State {
+//     // 请求审批
+//     fn request_review(self: Box<Self>) -> Box<dyn State>;
+//     // 审批通过
+//     fn approve(self: Box<Self>) -> Box<dyn State>;
+//     fn content<'a>(&self, _post: &'a Post) -> &'a str {
+//         // 需要注意生命周期，post引用作为参数，但是返回的可能是post中某一部分的引用，所以返回值的生命周期跟post的生命周期是相关联的
+//         ""
+//     }
+// }
+
+// struct Draft {}
+
+// impl State for Draft {
+//     fn request_review(self: Box<Self>) -> Box<dyn State> {
+//         Box::new(PendingReview {})
+//     }
+
+//     fn approve(self: Box<Self>) -> Box<dyn State> {
+//         self
+//     }
+// }
+
+// struct PendingReview {}
+
+// impl State for PendingReview {
+//     fn request_review(self: Box<Self>) -> Box<dyn State> {
+//         self
+//     }
+
+//     fn approve(self: Box<Self>) -> Box<dyn State> {
+//         Box::new(Published {})
+//     }
+// } 
+
+// struct Published {}
+
+// impl State for Published {
+//     fn request_review(self: Box<Self>) -> Box<dyn State> {
+//         self
+//     }
+
+//     fn approve(self: Box<Self>) -> Box<dyn State> {
+//         self
+//     }
+//     fn content<'a>(&self, post: &'a Post) -> &'a str {
+//         &post.content
+//     }
+
+// }
+
+// pub struct Post {
+//     state: Option<Box<dyn State>>,
+//     content: String,
+// }
+
+// impl Post {
+//     pub fn new() -> Post {
+//         Post {
+//             state: Some(Box::new(Draft {})),
+//             content: String::new(),
+//         }
+//     }
+
+//     pub fn add_text(&mut self, text: String) {
+//         // 将文本内容附加到content字段里
+//         self.content = text;
+//     }
+
+//     pub fn content(&self) -> &str {
+//         // 因为需要调用Option值的引用，所以需要使用as_ref()方法
+//         self.state.as_ref().unwrap().content(self)
+//     }
+
+//     pub fn request_review(&mut self) {
+//         // Option<Box<dyn State>>
+//         // take()方法会返回Option<Box<dyn State>>, 如果state为Some, 则返回Some(Box<dyn State>)
+//         // 如果state为None, 则返回None
+//         if let Some(s) = self.state.take() {
+//             self.state = Some(s.request_review());
+//         }
+//     }
+
+//     pub fn approve(&mut self) {
+//         if let Some(s) = self.state.take() {
+//             self.state = Some(s.approve());
+//         }
+//     }
+// }
+
+// pub trait Draw {
+//     fn draw(&self);
+// }
+
+// pub struct Screen {
+//     // Box<dyn Draw> 表示Box里面的元素都实现了Draw tarit, dyn表示动态分发
+//     pub components: Vec<Box<dyn Draw>>,
+// }
+
+// impl Screen {
+//     pub fn run(&self) {
+//         for component in self.components.iter() {
+//             component.draw();
+//         }
+//     }
+// } 
+// pub struct Button {
+//     pub width: u32,
+//     pub height: u32,
+//     pub label: String,
+// }
+// impl Draw for Button {
+//     fn draw(&self) {
+//         println!("绘制一个按钮, Button");
+//     }
+// }
+
 // 实现Summary trait
 // pub trait Summary {
 //     fn summarize(&self) -> String;

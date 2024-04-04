@@ -8,8 +8,11 @@
 // use std::fmt::Display;
 
 
+use core::{hash, num};
 // use std::{cell::RefCell, os::unix::thread, rc::{Rc, Weak}};
-use std::{thread, time::Duration};
+use std::{thread, time::Duration, vec};
+
+use rut::Post;
 // #[tokio::main]
 // async fn main() {
 fn main() {
@@ -1423,40 +1426,177 @@ fn main() {
                         //     println!("Got: {}", received);
                         // }
                     // 克隆多个发送者
-                        let (tx, rx) = mpsc::channel();
-                        let tx1 = mpsc::Sender::clone(&tx);  // xxx.clone()会增加counter+1，所以当tx counter==0,rx就知道已经结束了
-                        thread::spawn(move || {
-                            let vals = vec![
-                                String::from("1: hi"),
-                                String::from("1: from"),
-                                String::from("1: the"),
-                                String::from("1: thread"),
-                            ];
+                        // let (tx, rx) = mpsc::channel();
+                        // let tx1 = mpsc::Sender::clone(&tx);  // xxx.clone()会增加counter+1，所以当tx counter==0,rx就知道已经结束了
+                        // thread::spawn(move || {
+                        //     let vals = vec![
+                        //         String::from("1: hi"),
+                        //         String::from("1: from"),
+                        //         String::from("1: the"),
+                        //         String::from("1: thread"),
+                        //     ];
 
-                            for i in vals {
-                                tx.send(i).unwrap();
-                                thread::sleep(Duration::from_secs(1));
-                            }
-                        });
-                        thread::spawn(move || {
-                            let vals = vec![
-                                String::from("2: hi"),
-                                String::from("2: from"),
-                                String::from("2: the"),
-                                String::from("2: thread"),
-                            ];
+                        //     for i in vals {
+                        //         tx.send(i).unwrap();
+                        //         thread::sleep(Duration::from_secs(1));
+                        //     }
+                        // });
+                        // thread::spawn(move || {
+                        //     let vals = vec![
+                        //         String::from("2: hi"),
+                        //         String::from("2: from"),
+                        //         String::from("2: the"),
+                        //         String::from("2: thread"),
+                        //     ];
 
-                            for i in vals {
-                                tx1.send(i).unwrap();
-                                thread::sleep(Duration::from_secs(1));
-                            }
-                        });
-                        for received in rx {
-                            println!("Got: {}", received);
-                        }
+                        //     for i in vals {
+                        //         tx1.send(i).unwrap();
+                        //         thread::sleep(Duration::from_secs(1));
+                        //     }
+                        // });
+                        // for received in rx {
+                        //     println!("Got: {}", received);
+                        // }
+            // 共享状态的并发
+                // Go语言：不要用共享内存来通信，要用通信来共享内存
+                // Rust支持通过共享状态来实现并发
+                // Channel类似单所有权，一旦将值的所有权转移至Channel，就无法使用它了
+                // 共享内存病啊类似多所有权：多个线程可以同时访问同一块内存
+                // 使用Mutex来每次只允许一个线程来访问数据
+                // 想要访问数据，线程必须首先获取互斥锁（lock），lock数据结构时mutex的一部分，它能跟踪谁对数据有独占访问权
+                // mutex通常被描述为：通过锁定系统来保护它所持有的数据
+                // 使用mutex的两条规则
+                    // 在使用数据之前，必须尝试获取锁(lock)
+                    // 使用完mutex所保护的数据，必须对数据进行解锁，以便其他线程可以获取锁
+                // Mutex<T>：
+                    // 通过Mutx::new(数据)来创建Mutex<T>
+                    // Mutex<T>是一个智能指针，它包装了T，并允许我们通过Deref来获取T
+                    // 访问数据前，通过lock方法来获取锁，会阻塞当前线程，lock可能会失败
+                    // 返回的是MutexGuard<T>，它实现了Deref和 Drop
+                        // let m = Mutex::new(5);
+                        // {
+                        //     let mut num = m.lock().unwrap();
+                        //     *num = 6;
+                        // }
+                        // println!("m = {:?}", m);
+                // 多线程共享Mutex,使用Arc<T>来进行原子引用计数，跟Rc相似，但是它可以用于并发情景，性能差一点
+                    // let counter = Arc::new(Mutex::new(1));
+                    // let mut handles = vec![];
+                    // for _ in 1..10 {
+                    //     let counter = Arc::clone(&counter);
+                    //     let handle = thread::spawn(move || {
+                    //         let mut num = counter.lock().unwrap();
+                    //         *num += 1
+                    //     });
+                    //     handles.push(handle);
+                    // }
+
+                    // for h in handles {
+                    //     h.join().unwrap();
+                    // }
+
+                    // println!("Result: {}", *counter.lock().unwrap());
+                // Send 和 Sync trait
+                    // Rust语言的并发特性较少，目前讲的并发都来自标准库而不是语言本身
+                    // 无需局限于标准库的并发，可以自己实现并发
+                    // 但在Rust语言中有两个并发概念：
+                        // std::marker::Sync 和 std::marker::Send 这两个trait
+                    // Send
+                        // 允许线程间转移所有权
+                        // 实现Send trait 的类型可在线程间转移所有权
+                        // Rust中几乎所有的类型都实现了Send
+                        // 但Rc<T>没有实现Send，它只用于单线程情景
+                        // 任何完全由Send类型组成的类型也被标记为Send
+                        // 撤了原始指针之外，几乎所有的基础类型都实现了Send
+                    // Sync
+                        // 实现Sync的类型可以安全的呗多个线程引用
+                        // 也就是说，如果T是Sync，那么&T就是Send，引用可以被安全的送往另一个线程
+                        // 基础类型都是Sync
+                        // 完全由Sync类型组成的类型也是Sync
+                        // 但Rc<T>不是Sync，RefCell<T>和Cell<T>家族都不实是Sync的
+                        // Mutex<T>是Sync的
+                    // 转注意：手动来实现Send和Sync是不安全的
+        /* 面向对象 */
+            // 特性
+                // 封装：隐藏实现细节，只暴露接口，调用对象外部的代码无法直接访问对象内部的实现细节，唯一可以与对象进行交互的方法就是通过它公开的API
+                    // Rust： pub 关键字
+                // 继承：子类继承父类的方法，使对象可以沿用另外一个对象的数据和行为，且无需重复定义相关代码
+                    // Rust：没有继承，代码复用默认trait方法进行代码共享
+                // 多态：父类可以指向子类，子类可以指向父类
+                    // Rust：泛型和trait约束 （限定参数化多态）
+                // 抽象：父类定义接口，子类实现接口 
+                // 封装、继承、多态、抽象是面向对象编程的三大特性
+            // 为共有行为定义一个trait
+                // Rust避免将struct或enum称为对象，因为它们与impl块是分开的
+                // trait对象有些类似于其他语言中的对象，他们某种程度上组合了数据与行为
+                // trait对象与传统对象不同的地方：无法为trait对象添加数据
+                // trait对象被专门用于抽象某些共有行为，它没其他语言中的对象那么通用
+                    // let screen = Screen {
+                    //     components: vec![
+                    //         Box::new(SelectBox {
+                    //             width: 75,
+                    //             height: 10,
+                    //             options: vec![
+                    //                 String::from("Yes"),
+                    //                 String::from("Maybe"),
+                    //                 String::from("No"),
+                    //             ],
+                    //         }),
+                    //         Box::new(Button {
+                    //             width: 50,
+                    //             height: 10,
+                    //             label: String::from("OK"),
+                    //         }),
+                    //     ]
+                    // };
+                    // screen.run();
+            // Trait 对象执行的是动态派发
+                // 将 trait 约束作用于泛型时， Rust 编译器会执行单态化：
+                    // 编译器会为我们用来替换泛型类型参数的每一个具体类型生成对应函数和方法的非泛型实现。
+                // 通过单态化生成的代码会执行静态派发（ static dispatch )，在编译过程中确定调用的具体方法
+                // 动态派发（ dynamic dispatch ):
+                    // 无法在编译过程中确定你调用的究竟是哪一种方法
+                    // 编译器会产生额外的代码以便在运行时找出希望调用的方法
+                // 使用 trait 对象，会执行动态派发：
+                    // 产生运行时开销
+                    // 阻止编译器内联方法代码，使得部分优化操作无法进行
+            // Trait 对象必须保证对象安全
+                // 只能把满足对象安全（object-safe）的trait转化为trait对象
+                // Rust采用一系列规则来判定某个对象是否安全，只需要记住两条
+                    // 方法返回类型不是Self
+                    // 方法中不包含任何泛型参数
+            // 实现面向对象的设计模式
+                // 状态模式：是一种面向对象设计模式
+                // 一个值拥有的内部状态由数个状态对象组成，当值需要改变状态时，会改变状态对象，而不是改变值本身
+                // 使用状态模式意味着：
+                    // 业务需求变化时，不需要修改持有状态的值的代码，或者使用这个值的代码
+                    // 只需要更新状态对象内部的代码，以便改变其规则，或者增加一些新的状态对象
+                        // let mut post = Post::new();
+                        // post.add_text("I ate a salad for lunch today");
+                        // let post1 = post.request_review();
+                        // let post2 = post1.approve();
+                        // println!("{}", post2.content())
+            
+
                 
 }
-use std::sync::mpsc;
+// use rut::{Draw, Screen, Button};
+
+// struct SelectBox {
+//     width: u32,
+//     height: u32,
+//     options: Vec<String>,
+// }
+
+// impl Draw for SelectBox {
+//     fn draw(&self) {
+//         println!("绘制一个选择框")
+//     }
+// }
+
+// use std::sync::{Arc, Mutex};
+
+// use std::sync::mpsc;
 // #[derive(Debug)]
 // struct Node {
 //     value: i32,
