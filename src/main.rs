@@ -8,11 +8,14 @@
 // use std::fmt::Display;
 
 
-use core::{hash, num};
+// use core::{hash, num};
 // use std::{cell::RefCell, os::unix::thread, rc::{Rc, Weak}};
-use std::{thread, time::Duration, vec};
+// use std::{thread, time::Duration, vec};
 
-use rut::Post;
+// use std::env::consts;
+
+
+// use rut::Post;
 // #[tokio::main]
 // async fn main() {
 fn main() {
@@ -1576,10 +1579,411 @@ fn main() {
                         // let post1 = post.request_review();
                         // let post2 = post1.approve();
                         // println!("{}", post2.content())
-            
+        /* 模式匹配 */
+            // 模式是 Rust 中的一种特殊语法，用于匹配复杂和简单类型的结构
+            // 将模式与匹配表达式和其他构造结合使用，可以更好地控制程序的控制流.模式由以下元素（的一些组合）组成：
+                // 字面值
+                // 解构的数组、 enum 、 struct 和 tuple 
+                // 变量
+                // 通配符
+                // 占位符
+            // 想要使用模式，需要将其与某个值进行比较：如果模式匹配，就可以在代码中使用这个值的相应部分
+            // 用到模式的地方
+                // match 的Arm（分支）
+                    // match表达式的要求：尽可能的包含所有的可能性
+                    // _ 通配符：匹配任何值，但是不会绑定到变量，通常用于match的最后一个arm，或用于忽略某些值
+                // if let 表达式
+                    //  if let 表达式主要作为一种简短的方式来等价的代替只有一个匹配项的match
+                    // if let 可选的可以拥有else，else if 或 else if let，但是if let 不会检查穷尽性
+                        // let favorite_color: Option<&str> = None;
+                        // let favorite_color: Option<&str> = Some("pink");
+                        // let is_tuesday = false;
+                        // let age: Result<u8, _> = "35".parse();
+                        // if let Some(color) = favorite_color {
+                        //     println!("使用你喜欢的 {} 作为背景色", color);
+                        // } else if is_tuesday {
+                        //     println!("今天是周二，所以今天是休息日");
+                        // } else if let Ok(age) = age {
+                        //     if age > 30 {
+                        //         println!("你太老了，不能工作了");
+                        //     } else {
+                        //         println!("你太年轻了，继续努力吧");
+                        //     }
+                        // } else {
+                        //     println!("使用蓝色作为背景色颜色");
+                        // }
+                // while let条件循环
+                    // 只要模式继续满足匹配条件，while循环就一直运行 
+                        // let mut stack = Vec::new();
+                        // stack.push(1);
+                        // stack.push(2);
+                        // stack.push(3);
+                        // while let Some(x) = stack.pop() {
+                        //     // pop从最后面一个区域弹出一个元素
+                        //     println!("{}", x);
+                        // }
+                // for 循环
+                    // let v = vec![1, 2, 3];
+                    // for i in &v {
+                    //     println!("{}", i);
+                    // }
+                    // for (i, v) in v.iter().enumerate() {
+                    //     println!("第{}个元素是{}", i, v);
+                    // }
+                // let 模式
+                    // let a = "d";
+                    // let (b,c,d) = (1,2,"str");
+                    // println!("{},{},{}, {}",a,b,c,d);
+                // 函数的参数也是模式
+            // 模式的两种方式
+                // 可辨驳的，可失败,对于某些可能得值，无法进行匹配模式
+                    // if let Some(x) = a_value;
+                // 无可辩驳的
+                    // let x = 5;
+                // if let 和 while let 接收可辨驳和无可辩驳的模式
+            // 模式匹配的语法（全是很简单的例子，不在这里写了）
+                // @ 绑定：可以创建一个变量，该变量可以在测试某个值上进行匹配时，同时保存该值
+                    // let msg = Message::Hello { id: 5 };
+                    // match msg {
+                    //     Message::Hello {
+                    //         // id 要在3-7之间的范围内
+                    //         id: id_variable @ 3..=7,
+                    //     } => {
+                    //         println!("id 是 {}", id_variable);
+                    //     }
+                    //     Message::Hello { id: 10..=12 } => {
+                    //         println!("找到id另一个");
+                    //     }
+                    //     Message::Hello { id } => {
+                    //         println!("id 是 {}", id);
+                    //     }
+                    // }
+        /* Rust高级使用 */
+            // 不安全的Rust，unsafe
+            // Unsafe Rust存在的原因
+                // 静态分析是保守的，使用unsafe Rust表示，我知道自己在做什么，并承担相应的风险
+                // 计算机硬件本身就是不安全的，Rust需要能够进行底层系统编程
+            // unsafe 使用方式
+                // 使用unsafe关键字来切换到unsafe Rust，开启一个块，里面放着unsafe代码
+                // unsafe Rust里面可执行的四个动作：
+                    // 解引用原始指针
+                    // 调用unsafe函数或方法
+                    // 访问或修改可变的静态变量
+                    // 实现unsafe trait
+                // 注意：
+                    // unsafe并没有关闭借用检查或停用其他安全检查
+                    // 任何内存安全相关的错误必须留在unsafe块里
+                    // 尽可能隔离unsafe代码，最好将其封装在安全的抽象里，提供安全的API
+                // 解引用原始指针
+                    // 原始指针
+                        // 可变的：* mut T 
+                        // 不可变的：* const T 。意味着指针在解引用后不能直接对其进行赋值
+                        // 注意：这里的＊不是解引用符号，它是类型名的一部分。
+                    // 与引用不同，原始指针：
+                        // 允许通过同时具有不可变和可变指针或多个指向同一位置的可变指针来忽略借用规则
+                        // 无法保证能指向合理的内存
+                        // 允许为 null 
+                        // 不实现任何自动清理
+                    // 放弃保证的安全，换取更好的性能／与其它语言或硬件接口的能力
+                        // let mut num = 5;
+                        // // r1, r2, r 都为原始指针
+                        // let r1 = &num as *const i32;
+                        // let r2 = &mut num as *mut i32;
+                        // let address = 0x012345usize;
+                        // unsafe {
+                        //     println!("r1 is: {}", *r1);
+                        //     println!("r2 is: {}", *r2)
+                        // }
+                        // let r = address as *const i32;
+                        // unsafe {
+                        //     println!("r is: {}", *r);  // 运行会报错
+                        // }
+                    // 为什么要使用原始指针
+                        // 1.与C语言进行接口
+                        // 2.构建借用检查器无法理解的安全抽象
+                    // 调用 unsafe 函数或方法
+                        // unsafe 函数或方法：在定义前加上了 unsafe 关键字
+                        // 调用前需手动满足一些条件（主要靠看文档），因为 Rust 无法对这些条件进行验证
+                        // 需要在 unsafe 块里进行调用
+                            // unsafe {
+                            //     dangerous();
+                            // }
 
-                
+                            // let mut tl = vec![1,2,3,4,5,6,7,8,56];
+                            // let r = &mut tl[..];
+                            // let (a, b) = r.split_at_mut(3);
+                            // println!("{:?}", a);
+                            // println!("{:?}", b)
+                    // 使用extern函数调用外部代码
+                        // extern关键字：简化创建和使用外部函数接口（FFI：Foreign Function Interface），它允许一种编程语言定义函数，并让其他编程语言能调用这些函数
+                        // 任何在extern中声明的函数都是不安全的
+                            // unsafe {
+                            //     println!("abs(-3) = {}", abs(-3))
+                            // }
+                        // 应用二进制接口（ ABI , Application Binary Interface )：定义函数在汇编层的调用方式.
+                            // " C " ABI 是最常见的 ABI ，它遵循 C 语言的 ABI
+                        // 从其它语言调用 Rust 函数
+                            // 可以使用 extern 创建接口，其它语言通过它们可以调用 Rust 的函数．在 fn 前添加 extern 关键字，并指定 ABI 
+                            // 还需添加#[ no _ mangle ]注解：避免 Rust 在编译时改变它的名称
+                            // 这类的不需要使用unsafe
+                    // 访问或修改一个可变静态变量
+                        // 在Rust里，全局变量叫做静态（static）变量
+                            // println!("{}", HELLO_WORLD);
+                        // 静态变量
+                            // 静态变量与常量类似
+                            // 命名： SCREAMING _ SNAKE _ CASE 
+                            // 必须标注类型
+                            // 静态变量只能存储' static 生命周期的引用，无需显式标注
+                        // 常量和不可变静态变量的区别
+                            // 静态变量：有固定的内存地址，使用它的值总会访问同样的数据
+                            // 常量：允许使用它们的时候对数据进行复制
+                            // 静态变量：可以是可变的，访问和修改静态可变变量是不安全（ unsafe ）的
+                                // add_to_count(3);
+                                // // println!("The count is: {}", COUNTER);  // 报错 use of mutable static
+                                // unsafe {
+                                //     println!("The count is: {}", COUNTER);
+                                // }
+            // 高级 Trait  
+                // 在 Trait 定义中使用关联类型来指定占位类型
+                    // 关联类型（ associated type ）是 Trait 中的类型占位符，它可以用于 Trait 的方法签名中：
+                    // 可以定义出包含某些类型的 Trait ，而在实现前无需知道这些类型是什么  
+                // 默认泛型参数和运算符重载
+                    // 可以在使用泛型参数时为泛型指定一个默认的具体类型。
+                    // 语法：< PlaceholderType = ConcreteType >
+                    // 这种技术常用于运算符重载（ operator overloading )
+                    // Rust 不允许创建自己的运算符及重载任意的运算符
+                    // 但可以通过实现 std :: ops 中列出的那些 trait 来重载一部分相应的运算符
+                        // let pp = Point { x: 1, y: 0 } + Point { x: 2, y: 3 };
+                        // println!("pp = {:?}", pp)
+            // 高级类型
+                // newtype 模式可以
+                    // 用来静态的保证各种值之间不会混淆并表明值的单位
+                    // 为类型的某些细节提供抽象能力
+                    // 通过轻量级的封装来隐藏内部实现细节
+                // 使用类型别名创建类型同义词
+                    // . Rust 提供了类型别名的功能：
+                    // ﹣为现有类型生产另外的名称（同义词）
+                    // ﹣并不是一个独立的类型
+                    // -使用 type 关键字
+                    // ·主要用途：减少代码字符重复
+                        // let x = 5;
+                        // let y: Kilometers = 5;
+                        // println!("x + y = {}", x + y);
+                // Never 类型
+                    // 有一个名为！的特殊类型：
+                    // 它没有任何值，行话称为空类型（ empty type )
+                    // 我们倾向于叫它 never 类型，因为它在不返回的函数中充当返回类型．不返回值的函数也被称作发散函数（ diverging function )
+                    // never 类型的实例永远不存在．可以被强制的转化成其他任意类型
+                        // let guess = "";
+                        // loop {
+                        //     let guess: i32 = match guess.trim().parse() {
+                        //         Ok(num) => num,
+                        //         // 这里的continue就会返回一个never，所以会被强制的转化成第一个分支返回的值类型
+                        //         Err(_) => continue,
+                        //     };
+                        // }
+                // 动态大小和 Sized Trait 
+                    // Rust 需要在编译时确定为一个特定类型的值分配多少空间。
+                    // 动态大小的类型（ Dynamically Sized Types , DST ）的概念：
+                    // 编写代码时使用只有在运行时才能确定大小的值
+                    // str 是动态大小的类型（注意不是＆ str )：只有运行时才能确定字符串的长度﹣下列代码无法正常工作：
+                        // let s1: str =" Hello there !";
+                        // let s2: str =" How ' s it going ?";
+                    // &str里面存储的是str的地址和str的长度
+                // Sized trait 
+                    // 为了处理动态大小的类型， Rust 提供了一个 Sized trait 来确定一个类型的大小在
+                    // 编译时是否已知
+                        // 编译时可计算出大小的类型会自动实现这一 trait 
+                        // Rust 还会为每一个泛型函数隐式的添加 Sized 约束
+                            // fn gen<T>(t: T) {}  == fn gen<T: Sized>(t: T) {}
+            // 高级函数和闭包
+                // 函数指针
+                    // 可以将函数传递给其他函数
+                    // 函数在传递过程中会被强制转化成fn类型
+                    // fn类型就是”函数指针（function pointer）“
+                        // let answer = do_twice(add_one, 4);
+                        // println!("The answer is: {}", answer)
+                // 函数指针与闭包的不同
+                    // fn 是一个类型，不是一个 trait 
+                        // 可以直接指定 fn 为参数类型，不用声明一个以 Fn trait 为约束的泛型参数
+                    // 函数指针实现了全部3种闭包 trait ( Fn , FnMut , FnOnce ):
+                        // 总是可以把函数指针用作参数传递给一个接收闭包的函数
+                        // 所以，倾向于搭配闭包 trait 的泛型来编写函数：可以同时接收闭包和普通函数
+                        // 某些情景，只想接收 fn 而不接收闭包：
+                            // 与外部不支持闭包的代码交互： C 函数
+                                // let list_of_numbers = vec![1, 2, 3];
+                                // let list_of_strings: Vec<String> = list_of_numbers
+                                //     .iter()
+                                //     .map(|i| i.to_string())
+                                //     .collect();
+                                // let list_of_numbers1 = vec![6, 7, 8];
+                                // let list_of_strings1: Vec<String> = list_of_numbers1.iter().map(ToString::to_string).collect();
+                                // println!("{:?}", list_of_strings1);
+                                // println!("{:?}", list_of_strings);
+                                // #[derive(Debug)]
+                                // enum Status {
+                                //     Value(i32),
+                                //     Stop,
+                                // }
+                                // // 实例化Status枚举
+                                // let v = Status::Value(3);
+                                // println!("{:?}", v);
+                                // let list_of_status: Vec<Status> = (0i32..20).map(Status::Value).collect();
+                                // println!("{:?}", list_of_status)
+                    // 返回闭包
+                        // 闭包使用Trait进行表达，无法在函数中直接返回一个闭包，可以讲一个实现了该Trait的具体类型作为返回值Box<gyn Fn(i32) -> i32>
+                            // fn return_c() -> Box<dyn Fn(i32) -> i32> {
+                            //     Box::new(|x| x + 1)
+                            // }
+            // 宏 macro
+                // 宏在 Rust 里指的是一组相关特性的集合称谓：
+                    // 使用 macro_rules ！构建的声明宏（ declarative macro )
+                    // 3种过程宏
+                        // 自定义#[ derive ］宏，用于 struct 或 enum ，可以为其指定随 derive 属性添加的代码
+                        // 类似属性的宏，在任何条目上添加自定义属性
+                        // 类似函数的宏，看起来像函数调用，对其指定为参数的 token 进行操作 
+                // 函数与宏的差别
+                    // 本质上，宏是用来编写可以生成其它代码的代码（元编程， metaprogramming )函数在定义签名时，必须声明参数的个数和类型，宏可处理可变的参数
+                    // 编译器会在解释代码前展开宏
+                        // 宏的定义比函数复杂得多，难以阅读、理解、维护
+                        // 在某个文件调用宏时，必须提前定义宏或将宏引入当前作用域；
+                        // 函数可以在任何位置定义并在任何位置使用
+                        // macro_rules! 即将弃用
+                // 基于属性来生成代码的过程宏
+                    // 这种形式更像函数（某种形式的过程）一些
+                        // 接收并操作输入的 Rust 代码
+                        // 生成另外一些 Rust 代码作为结果
+                    // 三种过程宏：
+                        // 自定义派生
+                        // 属性宏
+                        // 函数宏
+                    // 创建过程宏时：
+                        // 宏定义必须单独放在它们自己的包中，并使用特殊的包类型
+                // 自定义derive宏
+                    // 需求：（使用工作空间）
+                        // 1.创建一个 hello _ macro 包，定义一个拥有关联函数 hello _ macro 的 HelloMacro trait 
+                        // 2.我们提供一个能自动实现 trait 的过程宏
+                        // 3.在它们的类型上标注＃[ derive ( HelloMacro )]，进而得到 hello _ macro 的默认实现
+                // 类似属性的宏
+                    // 属性宏与自定义 derive 宏类似﹣允许创建新的属性
+                        // 但不是为 derive 属性生成代码
+                    // 属性宏更加灵活：
+                        // derive 只能用于 struct 和 enum 
+                        // 属性宏可以用于任意条目，例如函数
+                // 类似函数的宏
+                    // 函数宏定义类似于函数调用的宏，但比普通函数更加灵活
+                    // 函数宏可以接收 TokenStream 作为参数
+                    // 与另外两种过程宏一样，在定义中使用 Rust 代码来操作 TokenStream
+
+
+
+       
+
+
+
 }
+
+// use proc_macro;
+// // 过程宏
+// #[some_attribute]
+// pub fn some__name(input: TokenStream) -> TokenStream {
+    
+// }
+// // 定义宏
+// #[macro_export]  // 标注当前宏必须在引入包的作用域后才可以使用
+// macro_rules! vec {
+//     ( $( $x:expr ),* ) => {
+//         {
+//             let mut temp_vec = Vec::new();
+//             $(
+//                 temp_vec.push($x);
+//             )*
+//             temp_vec
+//         }
+//     };
+// }
+
+// fn add_one(x: i32) -> i32 {
+//     x + 1
+// }
+
+// fn do_twice(f: fn(i32) -> i32, arg: i32) -> i32 {
+//     f(arg) + f(arg)
+// }
+// type Kilometers = i32;
+
+
+// use std::ops::Add;
+// struct Millimeters(i32);
+// struct Meters(i32);
+
+// impl Add<Meters> for Millimeters {
+//     type Output = Millimeters;
+//     fn add(self, other: Meters) -> Millimeters {
+//         Millimeters (self.0 + (other.0 * 1000))
+//     }
+    
+// }
+
+// #[derive(Debug)]
+// struct Point {
+//     x: i32,
+//     y: i32,
+// }
+
+// impl Add for Point {
+//     type Output = Point;
+//     fn add(self, other: Point) -> Point {
+//         Point {
+//             x: self.x + other.x,
+//             y: self.y + other.y,
+//         }
+//     }
+// }
+
+// pub trait Iterator {
+//     // Item就是关联类型
+//     type Item;
+//     fn next(&mut self) -> Option<Self::Item>;
+// }
+// static mut COUNTER: u32 = 0;
+
+// fn add_to_count(inc: u32) {
+//     unsafe {
+//         COUNTER += inc;
+//     }
+// }
+
+// static HELLO_WORLD:&str = "Hello, world!";
+// #[no_mangle]
+// pub extern "C" fn call_from_c() {
+//     println!("当前函数编译完连接后就可以被C语言访问了")
+// }
+
+// extern "C" {
+//     fn abs(input: i32) -> i32;
+// }
+
+// use std::slice;
+
+// fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+//     let len = slice.len();
+//     assert!(mid <= len);
+//     unsafe {
+//         (
+//             slice::from_raw_parts_mut(slice.as_mut_ptr(), mid),
+//             slice::from_raw_parts_mut(slice.as_mut_ptr().add(mid), len - mid),
+//         )
+//     }
+// }
+
+// unsafe fn dangerous() {
+//     println!("unsafe函数");
+// }
+
+// enum Message {
+//     Hello { id: i32 },
+// }
 // use rut::{Draw, Screen, Button};
 
 // struct SelectBox {
