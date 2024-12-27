@@ -162,7 +162,7 @@
 //     }
 // }
 
-// 实现Summary trait
+// // 实现Summary trait
 // pub trait Summary {
 //     fn summarize(&self) -> String;
 // }

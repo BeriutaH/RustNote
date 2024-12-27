@@ -1,3 +1,28 @@
+// use mysql::*;
+// use mysql::prelude::*;
+// use serde::Deserialize;
+// use std::fs;
+
+
+// #[derive(Debug, Deserialize)]
+// struct DatabaseConfig {
+//     host: String,
+//     port: u16,
+//     user: String,
+//     password: String,
+//     name: String,
+//     pool_size: Option<u32>,
+// }
+
+// #[derive(Debug, Deserialize)]
+// struct Config {
+//     database: DatabaseConfig,
+// }
+
+// fn load_config() -> Config {
+//     let config_content = fs::read_to_string("config.yml").expect("配置文件读取失败");
+//     serde_yaml::from_str(&config_content).expect("配置解析失败")
+// }
 // use core::num;
 // use std::io;  // 获取用户输入的库 std 表示标准库
 // use std::cmp::Ordering;  // 枚举类型，内含三个类型
@@ -18,6 +43,8 @@
 // use rut::Post;
 // #[tokio::main]
 // async fn main() {
+mod ticket;
+
 fn main() {
     // let secret_num = rand::thread_rng().gen_range(1, 101);
     // println!("猜数!请输入您所猜测的数字");
@@ -108,9 +135,9 @@ fn main() {
         // } else if number % 3 == 0 {
         //     println!("当前数字可以被3整除");
         // } else if number % 2 == 0 {
-        //     println!("当前数字可以被2整除");
-        // } else {
         //     println!("当前数字不可以被4,3,2整除");
+        // } else {
+        //     println!("当前数字可以被2整除");
         // }
         // 如果使用多个else if，那么最好使用match来重构代码
         // match number {
@@ -1873,14 +1900,29 @@ fn main() {
                 // 类似函数的宏
                     // 函数宏定义类似于函数调用的宏，但比普通函数更加灵活
                     // 函数宏可以接收 TokenStream 作为参数
-                    // 与另外两种过程宏一样，在定义中使用 Rust 代码来操作 TokenStream
+                    // 与另外两种过程宏一样，在定义中使用 Rust 代码来操作 TokenStreamlet config = load_config();
+    // // 从配置文件加载 `Config` 实例
+    // let config = load_config();
+    // // 构建 MySQL 连接 URL
+    // let url = format!(
+    //     "mysql://{}:{}@{}:{}/{}",
+    //     config.database.user,
+    //     config.database.password,
+    //     config.database.host,
+    //     config.database.port,
+    //     config.database.name
+    // );
 
+    // // 创建连接池
+    // let pool = Pool::new(OptsBuilder::from_opts(Opts::from_url(&url).unwrap())).unwrap();
 
+    // // 获取连接并执行简单查询
+    // let mut conn = pool.get_conn().expect("无法连接到数据库");
 
-       
-
-
-
+    // let result: Vec<String> = conn.query("SELECT 'Hello from MySQL!'").unwrap();
+    // println!("{:?}", result);
+                    
+    ticket::run_ticket_sale();
 }
 
 // use proc_macro;
@@ -2593,3 +2635,4 @@ fn main() {
 // fn five(x: i32) -> i32 {
 //     x + 5
 // }
+
